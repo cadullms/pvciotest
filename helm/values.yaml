@@ -1,0 +1,23 @@
+# Default values for our stateful set.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# == Scheduling ==
+scheduling:
+  # nodeSelectorInstanceType: Instance Type of a node this stateful set should be scheduled to.
+  # e.g. "Standard_DS2_v2" or "Standard_DS4_v2".
+  # If specified, a node with label beta.kubernetes.io/instance-type set to this value must exist.
+  # If omitted, no nodeSelector will be set, the stateful set will then go to any node (without taints).
+  nodeSelectorInstanceType:  
+  # onlyOnePerNode: If set to true, only one pod of all this will be scheduled to any node to make
+  # sure that bandwidth constraints do not invalidate our results because two pods were sharing
+  # the same node, competing for the VM's throughput limits. 
+  # Additionally, in the VM's disk io metrics, we can more easily tell the different disks from 
+  # each other.  
+  onlyOnePerNode: true
+
+# == PVC Settings ==
+# Size and storage class for the Persistent Volume Claim (template) to use
+pvc:
+  size: 2Gi
+  storageClass: default # e.g. "default" or "managed-premium"

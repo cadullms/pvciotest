@@ -1,0 +1,65 @@
+{{- $nameSuffix := .Release.Name -}}
+{{- $storageClass := .Values.pvc.storageClass | default "default" -}}
+{{- $storageSize := .Values.pvc.size | default "2Gi" -}}
+{{- $volumeClaimName := (print .Release.Name "-" $storageClass) -}}
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    run: stress-io-{{ $nameSuffix }}
+  name: stress-io-{{ $nameSuffix }}
+spec:
+  serviceName: "stress-io-{{ $nameSuffix }}"
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ $volumeClaimName }}
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: {{ $storageClass }}
+        resources:
+          requests:
+            storage: {{ $storageSize }}
+  replicas: 1
+  selector:
+    matchLabels:
+      run: stress-io-{{ $nameSuffix }}
+  template:
+    metadata:
+      labels:
+        run: stress-io-{{ $nameSuffix }}
+      {{- if .Values.scheduling.onlyOnePerNode}}
+        anti-affinity: only-one-pod-with-disk-per-node
+      {{- end }}
+    spec:
+      {{- if .Values.scheduling.nodeSelectorInstanceType }}
+      nodeSelector:
+        beta.kubernetes.io/instance-type: {{ .Values.scheduling.nodeSelectorInstanceType }}
+      {{- end }}
+      {{- if .Values.scheduling.onlyOnePerNode}}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: anti-affinity
+                operator: In
+                values:
+                - only-one-pod-with-disk-per-node
+            topologyKey: "kubernetes.io/hostname"
+      {{- end }}
+      containers:
+      - name: stress-io
+        image: ubuntu
+        command: ["bin/sh"]
+        args: ["-c", "while true; do dd if=/dev/zero of=/mnt/stress-target/test bs=64k count=128k conv=fdatasync ; sleep 300; done"]
+        resources:
+          limits:
+            cpu: "10"
+            memory: "10Gi"
+          requests:
+            cpu: "0.1"
+            memory: "100Mi"
+        volumeMounts:
+          - mountPath: "/mnt/stress-target"
+            name: {{ $volumeClaimName }}
