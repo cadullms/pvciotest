@@ -52,7 +52,7 @@ spec:
       - name: stress-io
         image: ubuntu
         command: ["bin/sh"] # Writing roughly 2 GB of data repeatedly in infinite loop
-        args: ["-c", "while true; do echo 'Start copying data...'; dd if=/dev/zero of=/mnt/stress-target/test bs=64k count=30k conv=fdatasync ; sleep 10; done"]
+        args: ["-c", "while true; do echo 'Start copying data...'; dd if=/dev/zero of=/mnt/stress-target/test bs=64k count=30k conv=fdatasync ; sleep 1; done"]
         resources:
           limits:
             cpu: "10"
