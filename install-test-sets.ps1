@@ -12,9 +12,9 @@ helm upgrade --install `
 
 helm upgrade --install `
     --set "scheduling.nodeSelectorInstanceType=Standard_DS2_v2" `
-    --set "pvc.size=16Gi"`
+    --set "pvc.size=64Gi"`
     --set "pvc.storageClass=managed-premium"`
-    --set "scheduling.onlyOnePerNode=true" premium16-smallmachine ./helm
+    --set "scheduling.onlyOnePerNode=true" premium64-smallmachine ./helm
 
 helm upgrade --install `
     --set "scheduling.nodeSelectorInstanceType=Standard_DS2_v2" `
