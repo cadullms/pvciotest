@@ -1,0 +1,70 @@
+{{- $nameSuffix := .Release.Name -}}
+
+{{- $storageAccountName := .Values.storage.storageAccountName -}}
+{{- $storageAccountResourceGroupName := .Values.storage.storageAccountResourceGroupName -}}
+{{- $containerName := .Values.storage.containerName -}}
+{{- $storageSize := .Values.storage.size | default "2Gi" -}}
+
+{{- if eq .Values.storage.type "blob" -}}
+
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: stress-io-{{ $nameSuffix }}
+  name: stress-io-{{ $nameSuffix }}
+spec:
+  containers:
+  - name: stress-io
+    image: ubuntu
+    command: ["bin/sh"] # Writing roughly 2 GB of data repeatedly in infinite loop
+    args: ["-c", "while true; do echo 'Start copying data...'; dd if=/dev/zero of=/mnt/stress-target/test bs=64k count=30k conv=fdatasync ; sleep 1; done"]
+    resources:
+      limits:
+        cpu: "10"
+        memory: "10Gi"
+      requests:
+        cpu: "0.1"
+        memory: "100Mi"
+    volumeMounts:
+      - mountPath: "/mnt/stress-target"
+        name: blob-volume
+  volumes:
+  - name: blob-volume
+    persistentVolumeClaim:
+      claimName: stress-io-{{ $nameSuffix }}-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: stress-io-{{ $nameSuffix }}-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: {{ $storageSize }}
+  storageClassName: ""
+  volumeName: stress-io-{{ $nameSuffix }}-pv
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: stress-io-{{ $nameSuffix }}-pv
+spec:
+  capacity:
+    storage: {{ $storageSize }}
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain  # "Delete" is not supported in static provisioning
+  csi:
+    driver: blob.csi.azure.com
+    readOnly: false
+    volumeHandle: nfsvol  # make sure this volumeid is unique in the cluster
+    volumeAttributes:
+      protocol: nfs
+      containerName: {{ $containerName }}
+      resourceGroup: {{ $storageAccountResourceGroupName }}
+      storageAccount: {{ $storageAccountName }}
+
+{{- end -}}

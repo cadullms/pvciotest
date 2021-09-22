@@ -16,8 +16,12 @@ scheduling:
   # each other.  
   onlyOnePerNode: true
 
-# == PVC Settings ==
-# Size and storage class for the Persistent Volume Claim (template) to use
-pvc:
+# == STorage Settings ==
+storage:
+  type: disk # disk, file or blob (all csi)
   size: 2Gi
-  storageClass: default # e.g. "default" or "managed-premium"
+  storageClass: managed-csi-premium # only for disk
+  storageAccountName: # only for file or blob
+  storageAccountResourceGroupName: # only for file or blob
+  containerName: # only for blob
+  fileShareName: # only for file

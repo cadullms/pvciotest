@@ -1,7 +1,9 @@
 {{- $nameSuffix := .Release.Name -}}
-{{- $storageClass := .Values.pvc.storageClass | default "default" -}}
-{{- $storageSize := .Values.pvc.size | default "2Gi" -}}
+{{- $storageClass := .Values.storage.storageClass | default "default" -}}
+{{- $storageSize := .Values.storage.size | default "2Gi" -}}
 {{- $volumeClaimName := (print .Release.Name "-" $storageClass) -}}
+
+{{- if eq .Values.storage.type "disk" -}}
 
 apiVersion: apps/v1
 kind: StatefulSet
@@ -63,3 +65,4 @@ spec:
         volumeMounts:
           - mountPath: "/mnt/stress-target"
             name: {{ $volumeClaimName }}
+{{- end -}}
